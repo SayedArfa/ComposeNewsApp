@@ -21,4 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "ComposeNewsApp"
 include(":app")
- 
+include("feature:newsList")
+include(":feature:newDetails")
+include(":core")
+include(":data")
