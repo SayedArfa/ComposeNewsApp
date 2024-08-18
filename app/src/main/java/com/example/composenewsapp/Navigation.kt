@@ -7,9 +7,10 @@ import androidx.navigation.compose.composable
 import com.example.core.models.Article
 import com.example.newdetails.ArticleDetailsRoute
 import com.example.newslist.ui.NewsListRoute
+import com.example.newslist.ui.SearchNewsRoute
 
 @Composable
-fun mainNavigation(
+fun MainNavigation(
     navController: NavHostController
 ) {
     NavHost(navController = navController, startDestination = BottomNavItems.News.route) {
@@ -20,7 +21,10 @@ fun mainNavigation(
             }
         }
         composable(BottomNavItems.Search.route) {
-
+            SearchNewsRoute {
+                navController.currentBackStackEntry?.savedStateHandle?.set("article", it)
+                navController.navigate("details")
+            }
         }
         composable(BottomNavItems.Favorite.route) {
 
