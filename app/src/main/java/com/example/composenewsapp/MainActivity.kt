@@ -9,15 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Icon
-import androidx.compose.material.Surface
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -36,6 +40,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             ComposeNewsAppTheme {
                 val navController = rememberNavController()
+                val snackBarHostState = remember { SnackbarHostState() }
+
                 Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = {
                     BottomNavigation {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -59,9 +65,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                }) { innerPadding ->
+                }, snackbarHost = { SnackbarHost(hostState = snackBarHostState) }) { innerPadding ->
                     Surface(modifier = Modifier.padding(innerPadding)) {
-                        MainNavigation(navController)
+                        MainNavigation(navController, snackBarHostState)
                     }
                 }
             }

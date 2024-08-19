@@ -1,6 +1,7 @@
 package com.example.newslist.ui
 
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -19,90 +20,72 @@ import javax.inject.Inject
 class NewsViewModel @Inject constructor(
     private val newsRepository: NewsRepo
 ) : ViewModel() {
-    private val _breakingNews: MutableStateFlow<Result<NewsResponse>> =
-        MutableStateFlow(Result.Loading)
-    val breakingNews: Flow<Result<NewsResponse>> = _breakingNews
-    var breakingNewsPage = 1
-    var breakingNewsResponse: NewsResponse? = null
-
-    val searchNews: MutableLiveData<Result<NewsResponse>> = MutableLiveData()
-    var searchNewsPage = 1
-    var searchNewsResponse: NewsResponse? = null
-    var newSearchQuery: String? = null
-    var oldSearchQuery: String? = null
-
+    private val _newsListFlow: MutableStateFlow<NewsUiState> =
+        MutableStateFlow(NewsUiState())
+    val newsListFlow: Flow<NewsUiState> = _newsListFlow
+    private var breakingNewsPage = 1
 
     init {
-        getBreakingNews("us")
+        getBreakingNews()
     }
 
-    fun getBreakingNews(countryCode: String) = viewModelScope.launch {
-        val response = newsRepository.getBreakingNews(countryCode, breakingNewsPage)
+    private fun getBreakingNews() = viewModelScope.launch {
+        _newsListFlow.value = _newsListFlow.value.copy(isLoading = true)
+        val response = newsRepository.getBreakingNews("us", breakingNewsPage)
+        Log.d("loadMore", "getBreakingNews: $breakingNewsPage")
         handleBreakingNewsResponse(response)
     }
 
-    fun searchNews(searchQuery: String) = viewModelScope.launch {
-        newSearchQuery = searchQuery
-        searchNews.postValue(Result.Loading)
-        val response = newsRepository.searchNews(searchQuery, searchNewsPage)
-        handleSearchNewsResponse(response)
+    fun loadMore() {
+        getBreakingNews()
     }
+
+    fun retry() {
+        getBreakingNews()
+    }
+
 
     private fun handleBreakingNewsResponse(response: Result<NewsResponse>) {
-        if (response is Result.Success) {
-            response.data?.let { resultResponse ->
-                breakingNewsPage++
-                if (breakingNewsResponse == null) {
-                    breakingNewsResponse = resultResponse
-                } else {
-                    val oldArticles = breakingNewsResponse?.articles
-                    val newArticles = resultResponse.articles
-                    oldArticles?.addAll(newArticles)
+        when (response) {
+            is Result.Success -> {
+                response.data.let { resultResponse ->
+                    breakingNewsPage++
+                    _newsListFlow.value = _newsListFlow.value.copy(
+                        isLoading = false,
+                        error = null,
+                        articles =
+                        mutableListOf<Article>().apply {
+                            addAll(_newsListFlow.value.articles + resultResponse.articles)
+                        }
+                    )
                 }
-                _breakingNews.value = Result.Success(breakingNewsResponse ?: resultResponse)
             }
-        } else
-            _breakingNews.value = response
-    }
 
+            is Result.Error -> _newsListFlow.value =
+                _newsListFlow.value.copy(error = response, isLoading = false)
 
-    private fun handleSearchNewsResponse(response: Result<NewsResponse>) {
-        if (response is Result.Success) {
-            response.data?.let { resultResponse ->
-                if (searchNewsResponse == null || newSearchQuery != oldSearchQuery) {
-                    searchNewsPage = 1
-                    oldSearchQuery = newSearchQuery
-                    searchNewsResponse = resultResponse
-                } else {
-                    searchNewsPage++
-                    val oldArticles = searchNewsResponse?.articles
-                    val newArticles = resultResponse.articles
-                    oldArticles?.addAll(newArticles)
-                }
-
-                searchNews.postValue(Result.Success(searchNewsResponse ?: resultResponse))
-            }
-        } else
-            searchNews.postValue(response)
-    }
-
-    fun saveArticle(article: Article) = viewModelScope.launch {
-        newsRepository.upsert(article)
-        getSavedNews()
-    }
-
-    private val _savedNews = MutableLiveData<List<Article>>()
-    val savedNews: LiveData<List<Article>> = _savedNews
-    fun getSavedNews() {
-        viewModelScope.launch {
-            _savedNews.postValue(newsRepository.getSavedNews())
+            Result.Loading -> {}
         }
+
     }
 
-    fun deleteArticle(article: Article) = viewModelScope.launch {
-        newsRepository.deleteArticle(article)
-        getSavedNews()
-    }
+    /* fun saveArticle(article: Article) = viewModelScope.launch {
+         newsRepository.upsert(article)
+         getSavedNews()
+     }
+
+     private val _savedNews = MutableLiveData<List<Article>>()
+     val savedNews: LiveData<List<Article>> = _savedNews
+     fun getSavedNews() {
+         viewModelScope.launch {
+             _savedNews.postValue(newsRepository.getSavedNews())
+         }
+     }
+
+     fun deleteArticle(article: Article) = viewModelScope.launch {
+         newsRepository.deleteArticle(article)
+         getSavedNews()
+     }*/
 }
 
 

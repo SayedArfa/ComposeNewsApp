@@ -17,14 +17,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.core.models.Article
 
 @Composable
-fun SearchNewsRoute(onItemClick: (Article) -> Unit) {
-    NewsSearchScreen(onItemClick)
+fun SearchNewsRoute(
+    onItemClick: (Article) -> Unit,
+    onShowSnackBar: suspend (String, String?, () -> Unit) -> Unit
+) {
+    NewsSearchScreen(onItemClick, onShowSnackBar)
 }
 
 @Composable
 fun NewsSearchScreen(
-    onItemClick: (Article) -> Unit, viewModel: SearchNewsViewModel = hiltViewModel()
+    onItemClick: (Article) -> Unit,
+    onShowSnackBar: suspend (String, String?, () -> Unit) -> Unit
 ) {
+    val viewModel: SearchNewsViewModel = hiltViewModel()
     Column {
         TextField(
             value = viewModel.searchQuery.collectAsState().value,
@@ -42,7 +47,13 @@ fun NewsSearchScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        NewsListScreen(onItemClick, viewModel.searchNews)
+        NewsListScreen(
+            viewModel.newsListFlow.collectAsState(initial = NewsUiState()).value,
+            onItemClick,
+            { viewModel.retry() },
+            { viewModel.loadMore() },
+            onShowSnackBar
+        )
     }
 }
 
