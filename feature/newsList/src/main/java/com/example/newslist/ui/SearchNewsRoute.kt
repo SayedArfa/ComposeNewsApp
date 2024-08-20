@@ -50,6 +50,7 @@ fun NewsSearchScreen(
         NewsListScreen(
             viewModel.newsListFlow.collectAsState(initial = NewsUiState()).value,
             onItemClick,
+            { viewModel.addRemoveArticle(it) },
             { viewModel.retry() },
             { viewModel.loadMore() },
             onShowSnackBar

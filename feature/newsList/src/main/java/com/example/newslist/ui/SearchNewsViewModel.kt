@@ -31,6 +31,7 @@ class SearchNewsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            getSavedNews()
             searchQuery.debounce(500L)
                 .flatMapConcat {
                     searchNews(it)
@@ -41,9 +42,12 @@ class SearchNewsViewModel @Inject constructor(
                             _newsListFlow.value = _newsListFlow.value.copy(
                                 isLoading = false,
                                 error = null,
-                                articles = it.data.articles
+                                articles = it.data.articles.map {
+                                    ArticleUiState(it, savedNews.map { it.url }.contains(it.url))
+                                }
                             )
                         }
+
                         is Result.Error -> _newsListFlow.value =
                             _newsListFlow.value.copy(error = it, isLoading = false)
 
@@ -56,7 +60,15 @@ class SearchNewsViewModel @Inject constructor(
     private suspend fun searchNews(text: String): Flow<Result<NewsResponse>> =
         flow {
             emit(Result.Loading)
-            emit(newsRepository.searchNews(text, searchNewsPage))
+            emit(
+                if (text.isBlank()) Result.Success(
+                    data = NewsResponse(
+                        mutableListOf(),
+                        "",
+                        0
+                    )
+                ) else newsRepository.searchNews(text, searchNewsPage)
+            )
         }
 
     fun loadMore() {
@@ -70,8 +82,8 @@ class SearchNewsViewModel @Inject constructor(
                             isLoading = false,
                             error = null,
                             articles =
-                            mutableListOf<Article>().apply {
-                                addAll(_newsListFlow.value.articles + it.data.articles)
+                            _newsListFlow.value.articles + it.data.articles.map {
+                                ArticleUiState(it, savedNews.map { it.url }.contains(it.url))
                             }
                         )
                     }
@@ -93,25 +105,25 @@ class SearchNewsViewModel @Inject constructor(
     }
 
 
-    /*private fun handleSearchNewsResponse(response: Result<NewsResponse>) {
-        if (response is Result.Success) {
-            response.data.let { resultResponse ->
-                if (searchNewsResponse == null || newSearchQuery != oldSearchQuery) {
-                    searchNewsPage = 1
-                    oldSearchQuery = newSearchQuery
-                    searchNewsResponse = resultResponse
-                } else {
-                    searchNewsPage++
-                    val oldArticles = searchNewsResponse?.articles
-                    val newArticles = resultResponse.articles
-                    oldArticles?.addAll(newArticles)
-                }
+    private fun refreshNews() {
+        val refreshedState = _newsListFlow.value.copy(articles = _newsListFlow.value.articles.map {
+            ArticleUiState(it.article, savedNews.map { it.url }.contains(it.article.url))
+        })
+        _newsListFlow.value = refreshedState
+    }
 
-                searchNews.postValue(Result.Success(searchNewsResponse ?: resultResponse))
-            }
-        } else
-            searchNews.postValue(response)
-    }*/
+    private var savedNews: Set<Article> = setOf()
+
+    private suspend fun getSavedNews() {
+        savedNews = newsRepository.getSavedNews().toSet()
+    }
+
+    fun addRemoveArticle(article: Article) = viewModelScope.launch {
+        if (savedNews.map { it.url }.contains(article.url)) newsRepository.deleteArticle(article)
+        else newsRepository.upsert(article)
+        getSavedNews()
+        refreshNews()
+    }
 }
 
 

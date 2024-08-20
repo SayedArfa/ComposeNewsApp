@@ -15,8 +15,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +46,7 @@ import com.example.core.models.Article
 internal fun NewsListScreen(
     newsUiState: NewsUiState,
     onItemClick: (Article) -> Unit,
+    onFavoriteClick: (Article) -> Unit,
     onRetry: () -> Unit,
     loadMore: () -> Unit,
     onShowSnackBar: suspend (String, String?, () -> Unit) -> Unit
@@ -49,11 +55,19 @@ internal fun NewsListScreen(
         val showSnackBar = remember {
             mutableIntStateOf(0)
         }
-        NewsList(newsUiState.articles, loadMore, onItemClick, modifier = Modifier.weight(1f, true))
+        NewsList(
+            newsUiState.articles,
+            loadMore,
+            onItemClick,
+            onFavoriteClick,
+            modifier = Modifier.weight(1f, true)
+        )
         if (newsUiState.isLoading) {
-            CircularProgressIndicator(modifier = Modifier
-                .padding(10.dp)
-                .animateContentSize())
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .animateContentSize()
+            )
         }
         newsUiState.error?.let {
             showSnackBar.intValue++
@@ -69,9 +83,10 @@ internal fun NewsListScreen(
 
 @Composable
 internal fun NewsList(
-    list: List<Article>,
+    list: List<ArticleUiState>,
     loadMore: () -> Unit,
     onItemClick: (Article) -> Unit,
+    onFavoriteClick: (Article) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val buffer = 1 // load more when scroll reaches last n item, where n >= 1
@@ -96,8 +111,8 @@ internal fun NewsList(
         modifier = modifier
     ) {
         items(list) {
-            key(it.url) {
-                NewsListItem(article = it, onItemClick)
+            key(it.article.id) {
+                NewsListItem(articleUiState = it, onItemClick, onFavoriteClick)
             }
 
         }
@@ -107,8 +122,11 @@ internal fun NewsList(
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 internal fun NewsListItem(
-    article: Article, onItemClick: (Article) -> Unit
+    articleUiState: ArticleUiState,
+    onItemClick: (Article) -> Unit,
+    onFavoriteClick: (Article) -> Unit
 ) {
+    val article = articleUiState.article
     Card(
         modifier = Modifier
             .padding(start = 10.dp, end = 10.dp)
@@ -135,6 +153,16 @@ internal fun NewsListItem(
                     .clip(MaterialTheme.shapes.small)
             )
             Column(modifier = Modifier.padding(10.dp)) {
+                IconButton(
+                    onClick = { onFavoriteClick(article) }, modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(10.dp)
+                ) {
+                    Icon(
+                        if (articleUiState.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = null
+                    )
+                }
                 Text(
                     text = "${article.title}",
                     maxLines = 1,
