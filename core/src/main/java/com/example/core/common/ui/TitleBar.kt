@@ -16,19 +16,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TitleBar(title: String, onBackPressed: () -> Unit) {
+fun TitleBar(title: String, modifier: Modifier = Modifier, onBackPressed: () -> Unit) {
     Row(
         horizontalArrangement = Arrangement.Start,
-        modifier = Modifier.padding(horizontal = 10.dp)
+        modifier = modifier
+            .padding(horizontal = 10.dp)
+            .clickable {
+                onBackPressed()
+            }
     ) {
         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
         Spacer(modifier = Modifier.width(5.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.clickable {
-                onBackPressed()
-            }
+            style = MaterialTheme.typography.titleLarge
         )
     }
 }

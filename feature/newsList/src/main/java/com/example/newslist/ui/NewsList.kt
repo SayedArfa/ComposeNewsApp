@@ -1,6 +1,8 @@
 package com.example.newslist.ui
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,9 +33,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.core.models.Article
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun NewsListScreen(
@@ -153,10 +158,29 @@ internal fun NewsListItem(
                     .clip(MaterialTheme.shapes.small)
             )
             Column(modifier = Modifier.padding(10.dp)) {
+                val favAnimate = remember {
+                    Animatable(1f)
+                }
+                val scope = rememberCoroutineScope()
                 IconButton(
-                    onClick = { onFavoriteClick(article) }, modifier = Modifier
+                    onClick = {
+                        onFavoriteClick(article)
+                        scope.launch {
+                            favAnimate.animateTo(
+                                1f,
+                                animationSpec = keyframes {
+                                    durationMillis = 500
+                                    1f at 0
+                                    2f at 250
+                                    1f at 500
+                                }
+                            )
+                        }
+
+                    }, modifier = Modifier
                         .align(Alignment.End)
                         .padding(10.dp)
+                        .scale(favAnimate.value)
                 ) {
                     Icon(
                         if (articleUiState.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
