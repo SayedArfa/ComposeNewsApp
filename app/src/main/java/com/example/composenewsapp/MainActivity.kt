@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -24,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = {
 
-                    var hideBottomBar = remember {
+                    val hideBottomBar = remember {
                         mutableStateOf(false)
                     }
                     when (currentDestination?.route) {
@@ -62,22 +62,25 @@ class MainActivity : ComponentActivity() {
                     }
                     if (hideBottomBar.value) {
                         BottomNavigation(
-                            elevation = 5.dp,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                            elevation = 5.dp
                         ) {
-
                             bottomNavItems.forEach { screen ->
+                                val selected = currentDestination?.route == screen.route
                                 BottomNavigationItem(
                                     icon = {
                                         Icon(
                                             imageVector = screen.imageVector,
-                                            contentDescription = null
+                                            contentDescription = null,
+                                            tint = if (selected) Color.Green else Color.Black
                                         )
                                     },
-                                    label = { Text(text = stringResource(id = screen.stringResourceId)) },
-                                    selected = currentDestination?.route == screen.route,
-
+                                    label = {
+                                        Text(
+                                            text = stringResource(id = screen.stringResourceId),
+                                            color = if (selected) Color.Green else Color.Black
+                                        )
+                                    },
+                                    selected = selected,
                                     onClick = {
                                         navController.navigate(route = screen.route) {
                                             popUpTo(navController.graph.startDestinationId)
@@ -108,7 +111,7 @@ sealed class BottomNavItems(
     @StringRes val stringResourceId: Int,
     val imageVector: ImageVector
 ) {
-    data object News : BottomNavItems("news", R.string.news, Icons.Default.Home)
-    data object Search : BottomNavItems("search", R.string.search, Icons.Default.Search)
-    data object Favorite : BottomNavItems("fav", R.string.favorites, Icons.Default.Favorite)
+    data object News : BottomNavItems("news", R.string.news, Icons.Filled.Home)
+    data object Search : BottomNavItems("search", R.string.search, Icons.Filled.Search)
+    data object Favorite : BottomNavItems("fav", R.string.favorites, Icons.Filled.Favorite)
 }
