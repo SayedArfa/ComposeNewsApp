@@ -9,23 +9,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.composenewsapp.ui.theme.ComposeNewsAppTheme
@@ -41,29 +42,52 @@ class MainActivity : ComponentActivity() {
             ComposeNewsAppTheme {
                 val navController = rememberNavController()
                 val snackBarHostState = remember { SnackbarHostState() }
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+
 
                 Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = {
-                    BottomNavigation {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-                        bottomNavItems.forEach { screen ->
-                            BottomNavigationItem(
-                                icon = {
-                                    Icon(
-                                        imageVector = screen.imageVector,
-                                        contentDescription = null
-                                    )
-                                },
-                                label = { Text(text = stringResource(id = screen.stringResourceId)) },
-                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                                onClick = {
-                                    navController.navigate(route = screen.route) {
-                                        popUpTo(navController.graph.startDestinationId)
-                                        launchSingleTop = true
-                                    }
-                                }
-                            )
+
+                    var hideBottomBar = remember {
+                        mutableStateOf(false)
+                    }
+                    when (currentDestination?.route) {
+                        "details" -> {
+                            hideBottomBar.value = false
                         }
+
+                        else -> {
+                            hideBottomBar.value = true
+                        }
+                    }
+                    if (hideBottomBar.value) {
+                        BottomNavigation(
+                            elevation = 5.dp,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+
+                            bottomNavItems.forEach { screen ->
+                                BottomNavigationItem(
+                                    icon = {
+                                        Icon(
+                                            imageVector = screen.imageVector,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    label = { Text(text = stringResource(id = screen.stringResourceId)) },
+                                    selected = currentDestination?.route == screen.route,
+
+                                    onClick = {
+                                        navController.navigate(route = screen.route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
                     }
                 }, snackbarHost = { SnackbarHost(hostState = snackBarHostState) }) { innerPadding ->
                     Surface(modifier = Modifier.padding(innerPadding)) {
