@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -28,9 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.core.common.ui.EndlessLazyColumn
 import com.example.core.models.Article
 import kotlinx.coroutines.launch
 
@@ -94,33 +89,15 @@ internal fun NewsList(
     onFavoriteClick: (Article) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val buffer = 1 // load more when scroll reaches last n item, where n >= 1
-    val listState = rememberLazyListState()
-
-    // observe list scrolling
-    val reachedBottom: Boolean by remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            lastVisibleItem?.index != 0 && lastVisibleItem?.index == listState.layoutInfo.totalItemsCount - buffer
-        }
-    }
-
-    // load more if scrolled to bottom
-    LaunchedEffect(reachedBottom) {
-        if (reachedBottom) loadMore()
-    }
-    LazyColumn(
-        state = listState,
+    EndlessLazyColumn(
+        items = list,
+        itemKey = { it.article.url ?: "" },
+        itemContent = { NewsListItem(articleUiState = it, onItemClick, onFavoriteClick) },
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(5.dp),
-        modifier = modifier
+        contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
+        modifier = modifier.padding(horizontal = 10.dp)
     ) {
-        items(list) {
-            key(it.article.id) {
-                NewsListItem(articleUiState = it, onItemClick, onFavoriteClick)
-            }
-
-        }
+        loadMore()
     }
 }
 
