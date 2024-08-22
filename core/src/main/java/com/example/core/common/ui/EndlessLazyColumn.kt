@@ -3,8 +3,8 @@ package com.example.core.common.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,17 +17,15 @@ import androidx.compose.ui.unit.dp
 
 
 @Composable
-fun <T> EndlessLazyColumn(
+fun EndlessLazyColumn(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
-    items: List<T>,
-    itemKey: (T) -> Any,
-    itemContent: @Composable (T) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    lazyColumnContent: LazyListScope.() -> Unit,
     loadMore: () -> Unit
 ) {
 
@@ -45,12 +43,7 @@ fun <T> EndlessLazyColumn(
         verticalArrangement = verticalArrangement,
         horizontalAlignment = horizontalAlignment
     ) {
-        items(
-            items = items,
-            key = { item: T -> itemKey(item) },
-        ) { item ->
-            itemContent(item)
-        }
+        lazyColumnContent(this)
     }
 }
 

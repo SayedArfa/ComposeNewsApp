@@ -1,11 +1,11 @@
 package com.example.newslist.ui
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,55 +54,50 @@ internal fun NewsListScreen(
     loadMore: () -> Unit,
     onShowSnackBar: suspend (String, String?, () -> Unit) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        val showSnackBar = remember {
-            mutableIntStateOf(0)
-        }
-        NewsList(
-            newsUiState.articles,
-            loadMore,
-            onItemClick,
-            onFavoriteClick,
-            modifier = Modifier.weight(1f, true)
-        )
-        if (newsUiState.isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .animateContentSize()
-            )
-        }
-        newsUiState.error?.let {
-            showSnackBar.intValue++
-            LaunchedEffect(showSnackBar) {
-                onShowSnackBar(it.errorType.toString(), "Retry") {
-                    onRetry()
-                }
+    val showSnackBar = remember {
+        mutableIntStateOf(0)
+    }
+    newsUiState.error?.let {
+        showSnackBar.intValue++
+        LaunchedEffect(showSnackBar) {
+            onShowSnackBar(it.errorType.toString(), "Retry") {
+                onRetry()
             }
         }
-
     }
-}
 
-@Composable
-internal fun NewsList(
-    list: List<ArticleUiState>,
-    loadMore: () -> Unit,
-    onItemClick: (Article) -> Unit,
-    onFavoriteClick: (Article) -> Unit,
-    modifier: Modifier = Modifier
-) {
     EndlessLazyColumn(
-        items = list,
-        itemKey = { it.article.url ?: "" },
-        itemContent = { NewsListItem(articleUiState = it, onItemClick, onFavoriteClick) },
+        lazyColumnContent = {
+            items(
+                items = newsUiState.articles
+            ) { item ->
+                key(item.article.url ?: "") {
+                    NewsListItem(articleUiState = item, onItemClick, onFavoriteClick)
+                }
+            }
+            if (newsUiState.isLoading) {
+                item {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Transparent)
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+        },
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
-        modifier = modifier.padding(horizontal = 10.dp)
+        contentPadding = PaddingValues(top = 20.dp, bottom = 50.dp),
+        modifier = Modifier
+            .padding(horizontal = 10.dp)
+            .fillMaxSize()
     ) {
         loadMore()
     }
 }
+
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
