@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.core.models.Article
 import com.example.newdetails.ArticleDetailsRoute
+import com.example.newslist.ui.FavoriteRoute
 import com.example.newslist.ui.NewsListRoute
 import com.example.newslist.ui.SearchNewsRoute
 
@@ -57,9 +58,13 @@ fun MainNavigation(
             }, onShowSnackBar = ::onShowSnackBar)
         }
         composable(BottomNavItems.Favorite.route) {
-
+            FavoriteRoute {
+                navController.currentBackStackEntry?.savedStateHandle?.set("article", it)
+                navController.navigate("details")
+            }
         }
-        composable("details",
+        composable(
+            "details",
             enterTransition = {
                 fadeIn(
                     animationSpec = tween(

@@ -8,6 +8,8 @@ import com.example.core.models.Article
 import com.example.core.models.NewsResponse
 import com.example.core.repository.NewsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchNewsViewModel @Inject constructor(
     private val newsRepository: NewsRepo
@@ -31,7 +34,13 @@ class SearchNewsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            getSavedNews()
+            newsRepository.getFavoritesFlow().collectLatest {
+                savedNews = it.toSet()
+                refreshNews()
+            }
+        }
+        viewModelScope.launch {
+
             searchQuery.debounce(500L)
                 .flatMapConcat {
                     searchNews(it)
@@ -57,7 +66,7 @@ class SearchNewsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun searchNews(text: String): Flow<Result<NewsResponse>> =
+    private fun searchNews(text: String): Flow<Result<NewsResponse>> =
         flow {
             emit(Result.Loading)
             emit(
@@ -114,14 +123,10 @@ class SearchNewsViewModel @Inject constructor(
 
     private var savedNews: Set<Article> = setOf()
 
-    private suspend fun getSavedNews() {
-        savedNews = newsRepository.getSavedNews().toSet()
-    }
 
     fun addRemoveArticle(article: Article) = viewModelScope.launch {
         if (savedNews.map { it.url }.contains(article.url)) newsRepository.deleteArticle(article)
         else newsRepository.upsert(article)
-        getSavedNews()
         refreshNews()
     }
 }

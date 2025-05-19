@@ -9,7 +9,8 @@ import com.example.data.local.datasource.NewsLocalDataSource
 import com.example.data.local.mapper.ArticleMapper
 import com.example.data.remote.SafeApiCall
 import com.example.data.remote.datasource.NewsRemoteDataSource
-import dagger.hilt.android.scopes.ActivityRetainedScoped
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,8 +46,13 @@ class NewsRepository @Inject constructor(
             ArticleMapper().mapFromEntity(it)
         }
 
+    override fun getFavoritesFlow(): Flow<List<Article>> =
+        newsLocalDataSource.getFavoritesFlow().map {
+            it.map { ArticleMapper().mapFromEntity(it) }
+        }
+
     override suspend fun deleteArticle(article: Article) =
-        newsLocalDataSource.deleteArticle(ArticleMapper().mapToEntity(article))
+        newsLocalDataSource.deleteArticle(article.url)
 
 
 }

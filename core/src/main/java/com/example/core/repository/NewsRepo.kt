@@ -3,6 +3,7 @@ package com.example.core.repository
 import com.example.core.Result
 import com.example.core.models.Article
 import com.example.core.models.NewsResponse
+import kotlinx.coroutines.flow.Flow
 
 interface NewsRepo {
     suspend fun getBreakingNews(countryCode: String, pageNumber: Int): Result<NewsResponse>
@@ -12,6 +13,8 @@ interface NewsRepo {
     suspend fun upsert(article: Article): Long
 
     suspend fun getSavedNews(): List<Article>
+
+    fun getFavoritesFlow(): Flow<List<Article>>
 
     suspend fun deleteArticle(article: Article)
 }

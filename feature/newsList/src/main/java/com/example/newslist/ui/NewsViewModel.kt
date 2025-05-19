@@ -11,6 +11,7 @@ import com.example.core.repository.NewsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,7 +25,13 @@ class NewsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            getSavedNews()
+
+            newsRepository.getFavoritesFlow().collectLatest {
+                savedNews = it.toSet()
+                refreshNews()
+            }
+        }
+        viewModelScope.launch {
             getBreakingNews()
         }
     }
@@ -54,7 +61,8 @@ class NewsViewModel @Inject constructor(
             is Result.Success -> {
                 response.data.let { resultResponse ->
                     breakingNewsPage++
-                    _newsListFlow.value = _newsListFlow.value.copy(isLoading = false,
+                    _newsListFlow.value = _newsListFlow.value.copy(
+                        isLoading = false,
                         error = null,
                         articles = mutableListOf<ArticleUiState>().apply {
                             addAll(_newsListFlow.value.articles + resultResponse.articles.map {
@@ -81,15 +89,11 @@ class NewsViewModel @Inject constructor(
 
     private var savedNews: Set<Article> = setOf()
 
-    private suspend fun getSavedNews() {
-        savedNews = newsRepository.getSavedNews().toSet()
-    }
+
 
     fun addRemoveArticle(article: Article) = viewModelScope.launch {
         if (savedNews.map { it.url }.contains(article.url)) newsRepository.deleteArticle(article)
         else newsRepository.upsert(article)
-        getSavedNews()
-        refreshNews()
     }
 }
 
